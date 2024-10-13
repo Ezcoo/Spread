@@ -36,4 +36,12 @@ public class BookService
 
         return country;
     }
+
+    public async Task<Country> AddCountry(string countryName)
+    {
+        var country = _dbContext.Country.Add(new Country { Name = countryName }).Entity;
+        await _dbContext.SaveChangesAsync();
+
+        return country;
+    }
 }

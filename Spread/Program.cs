@@ -43,28 +43,34 @@ public class SpreadApplication
 
         while (isRunning)
         {
+            Console.Write("Type a command: ");
             string input = Console.ReadLine();
-            if (input == null)
-            {
-                continue;
-            }
             input = input.ToLower();
+            
+            switch (input)
+            {
+                case null:
+                    break;
 
-            if (input == "get-books")
-            {
-                await GetBooks();
-            }
-            else if (input == "add-book")
-            {
-                await AddBook();
-            }
-            else if (input == "quit")
-            {
-                isRunning = false;
-            }
-            else
-            {
-                Console.WriteLine("Unknown command!");
+                case "get-books":
+                    await GetBooks();
+                    break;
+
+                case "add-book":
+                    await AddBook();
+                    break;
+
+                case "add-country":
+                    await AddCountry();
+                    break;
+
+                case "quit":
+                    isRunning = false;
+                    break;
+
+                default:
+                    Console.WriteLine("Unknown command!");
+                    break;
             }
         }
     }
@@ -73,25 +79,78 @@ public class SpreadApplication
     {
         List<Book> books = await _bookService.GetBooks();
 
+        Console.WriteLine();
+
         foreach (Book book in books)
         {
-            Console.WriteLine(book.Title + ", " + book.Country.Name);
+            Console.WriteLine(book.Title + " (" + book.Country.Name + ")");
         }
+
+        Console.WriteLine();
     }
 
     private async Task AddBook()
     {
         Console.Write("Please type the name of the book: ");
-        // TODO: Handle null / empty book name
         string bookName = Console.ReadLine();
 
-        // TODO: Handle no country specified
-        Console.Write("Please type the country of the book: ");
-        var country = await _bookService.GetCountry(Console.ReadLine());
-
-        if (country != null)
+        while (bookName == null)
         {
-           Book book = await _bookService.AddBook(new Book { Title = bookName, Country = country });
+            Console.Write("Invalid book name. Please try again: ");
+            bookName = Console.ReadLine();
         }
+
+        Console.Write("Please type the country of the book: ");
+        var countryName = Console.ReadLine();
+
+        while (countryName == null)
+        {
+            Console.Write("Invalid country name. Please try again: ");
+            countryName = Console.ReadLine();
+        }
+
+        var country = await _bookService.GetCountry(countryName);
+
+        while (country == null)
+        {
+            Console.Write("Country not found from database! If you would like to add a country to the database, use command \'add-country\'. In other case, please try again: ");
+            var input = Console.ReadLine();
+
+            switch (input)
+            {
+                case null:
+                    break;
+
+                case "add-country":
+                    await AddCountry();
+                    country = await _bookService.GetCountry(countryName);
+                    break;
+
+                default:
+                    country = await _bookService.GetCountry(countryName);
+                    break;
+            }
+
+        }
+
+        Book book = await _bookService.AddBook(new Book { Title = bookName, Country = country });
+        
+        Console.WriteLine($"Book \'{bookName}\' ({country.Name}) added to database!\n");
     }
+
+    private async Task AddCountry()
+    {
+        Console.Write("Please type the name of the country: ");
+        string countryName = Console.ReadLine();
+
+        while (countryName == null)
+        {
+            Console.Write("Invalid country name. Please try again: ");
+            countryName = Console.ReadLine();
+        }
+
+        var country = await _bookService.AddCountry(countryName);
+        Console.WriteLine($"Country \'{country.Name}\' added to database!\n");
+    }
+
 }
